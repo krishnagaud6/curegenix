@@ -301,6 +301,60 @@ Then navigate to **<http://localhost:8000>**. Upload a raw `.pdb` file matching 
 
 ---
 
+## 🚀 Deployment Guide
+
+CureGenix is deployment-ready for various platforms. The application requires both Python (for FastAPI backend) and Node.js (for PDB parsing).
+
+### Environment Variables
+
+Before deploying, ensure you have:
+- `GROQ_API_KEY`: Your Groq API key (get free at [console.groq.com](https://console.groq.com/))
+- `GROQ_MODEL`: Set to `llama-3.3-70b-versatile`
+
+### Free Deployment Options
+
+#### 1. **Render** (Recommended - Free tier available)
+1. Connect your GitHub repository
+2. Create a new **Web Service**
+3. Set build command: `pip install -r requirements.txt`
+4. Set start command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables in Render dashboard
+6. Deploy!
+
+#### 2. **Railway**
+1. Connect your GitHub repository
+2. Railway auto-detects Python projects
+3. Add environment variables
+4. Deploy automatically
+
+#### 3. **Fly.io** (Docker-based)
+1. Install Fly CLI
+2. Run `fly launch` in project directory
+3. Use the provided Dockerfile
+4. Set secrets: `fly secrets set GROQ_API_KEY=your_key`
+5. Deploy with `fly deploy`
+
+#### 4. **Container Platforms** (Docker)
+Use the included `Dockerfile` for any container platform:
+```bash
+docker build -t curegenix .
+docker run -p 8000:8000 -e GROQ_API_KEY=your_key curegenix
+```
+
+#### 5. **Local Development**
+```bash
+pip install -r requirements.txt
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Notes
+- The app serves the frontend statically from the backend
+- PDB parsing requires Node.js, included in Dockerfile
+- Free tiers have usage limits - monitor API calls
+- For production, consider adding rate limiting and authentication
+
+---
+
 ## ⚡ How the Pipeline Works
 
 ```
