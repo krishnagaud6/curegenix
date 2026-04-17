@@ -1,0 +1,124 @@
+/**
+ * Protein folding–inspired loading: abstract collapse / settle motion.
+ */
+.folding-loader {
+  --fold-cyan: var(--cg-cyan);
+  --fold-violet: var(--cg-violet);
+  --fold-pink: var(--cg-pink);
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+}
+
+.folding-loader__node {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--fold-cyan), var(--fold-violet));
+  box-shadow:
+    0 0 12px rgba(6, 182, 212, 0.6),
+    0 0 24px rgba(139, 92, 246, 0.35);
+  animation: fold-orbit 2.4s ease-in-out infinite;
+}
+
+.folding-loader__node:nth-child(1) {
+  left: 50%;
+  top: 8%;
+  margin-left: -6px;
+  animation-delay: 0s;
+}
+
+.folding-loader__node:nth-child(2) {
+  right: 12%;
+  top: 50%;
+  margin-top: -6px;
+  animation-delay: 0.15s;
+  background: radial-gradient(circle at 30% 30%, var(--fold-violet), var(--fold-pink));
+}
+
+.folding-loader__node:nth-child(3) {
+  left: 50%;
+  bottom: 8%;
+  margin-left: -6px;
+  animation-delay: 0.3s;
+}
+
+.folding-loader__node:nth-child(4) {
+  left: 12%;
+  top: 50%;
+  margin-top: -6px;
+  animation-delay: 0.45s;
+  background: radial-gradient(circle at 30% 30%, var(--fold-pink), var(--fold-cyan));
+}
+
+.folding-loader__node:nth-child(5) {
+  left: 50%;
+  top: 50%;
+  margin: -6px 0 0 -6px;
+  width: 10px;
+  height: 10px;
+  animation: fold-core 2.4s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes fold-orbit {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: translate(
+        calc(var(--tx, 0) * 18px),
+        calc(var(--ty, 0) * 18px)
+      )
+      scale(0.65);
+    opacity: 0.85;
+  }
+  55% {
+    transform: translate(0, 0) scale(0.5);
+    opacity: 0.6;
+  }
+}
+
+.folding-loader__node:nth-child(1) {
+  --tx: 0;
+  --ty: 1;
+}
+.folding-loader__node:nth-child(2) {
+  --tx: -1;
+  --ty: 0;
+}
+.folding-loader__node:nth-child(3) {
+  --tx: 0;
+  --ty: -1;
+}
+.folding-loader__node:nth-child(4) {
+  --tx: 1;
+  --ty: 0;
+}
+
+@keyframes fold-core {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 16px rgba(236, 72, 153, 0.5),
+      0 0 32px rgba(6, 182, 212, 0.25);
+  }
+  50% {
+    transform: scale(1.35);
+    box-shadow:
+      0 0 28px rgba(6, 182, 212, 0.65),
+      0 0 48px rgba(139, 92, 246, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folding-loader__node {
+    animation: none;
+    opacity: 0.9;
+  }
+}

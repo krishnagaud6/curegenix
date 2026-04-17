@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="CureGenix — MCP-powered multi-agent system for structure-driven drug discovery from PDB protein files">
+    <title>CureGenix</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#20005f",
+                        "on-surface-variant": "#bac9cc",
+                        "on-primary-container": "#00626e",
+                        "primary-fixed": "#9cf0ff",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-tertiary-fixed": "#00201c",
+                        "tertiary": "#9affee",
+                        "on-error": "#690005",
+                        "surface-tint": "#00daf3",
+                        "on-primary-fixed": "#001f24",
+                        "outline": "#849396",
+                        "on-tertiary-fixed-variant": "#005048",
+                        "surface-variant": "#313441",
+                        "surface-container-lowest": "#0a0e19",
+                        "on-primary-fixed-variant": "#004f58",
+                        "surface-container-low": "#171b27",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#71f8e4",
+                        "on-tertiary": "#003731",
+                        "primary-container": "#00e5ff",
+                        "surface-container": "#1b1f2b",
+                        "tertiary-fixed-dim": "#4fdbc8",
+                        "error-container": "#93000a",
+                        "primary-fixed-dim": "#00daf3",
+                        "on-secondary-fixed-variant": "#4f00d0",
+                        "on-secondary": "#370096",
+                        "on-background": "#dfe2f2",
+                        "inverse-surface": "#dfe2f2",
+                        "secondary-container": "#5203d5",
+                        "on-tertiary-container": "#00655a",
+                        "background": "#0f131e",
+                        "inverse-on-surface": "#2c303c",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#0f131e",
+                        "tertiary-container": "#5ce6d2",
+                        "surface-container-highest": "#313441",
+                        "secondary-fixed": "#e8deff",
+                        "on-secondary-container": "#c0acff",
+                        "primary": "#c3f5ff",
+                        "surface": "#0f131e",
+                        "inverse-primary": "#006875",
+                        "surface-bright": "#353945",
+                        "surface-container-high": "#262a36",
+                        "secondary": "#cdbdff",
+                        "on-primary": "#00363d",
+                        "on-surface": "#dfe2f2",
+                        "outline-variant": "#3b494c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .headline { font-family: 'Space Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(49, 52, 65, 0.4);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+</head>
+
+<body style="overflow-y: auto">
+    <!-- Animated background -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <canvas id="dna-canvas-bg" class="dna-canvas-bg" aria-hidden="true"></canvas>
+    <div class="grid-bg" aria-hidden="true"></div>
+    <div class="particle-layer" id="particles" aria-hidden="true"></div>
+    <div class="grain-overlay" aria-hidden="true"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="/static/assets/logo.png" alt="CureGenix Logo" class="logo-img" />
+                </div>
+                <div class="logo-text">
+                    <h1>CureGenix</h1>
+                    <span class="logo-badge">MCP-Powered</span>
+                </div>
+            </div>
+            <nav class="header-nav">
+                <button class="nav-btn" id="btn-mcp-tools" title="View MCP Tools">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    MCP Tools
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero / Upload Section -->
+        <section id="hero-section" class="relative z-10 px-8 py-12 md:py-24 max-w-6xl mx-auto flex flex-col items-center text-center">
+
+<!-- Hero -->
+<div class="max-w-3xl mb-12">
+  <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-6">
+    CureGenix: <span class="text-cyan-400">AI Drug Discovery</span>
+  </h1>
+
+  <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+    Upload protein data to begin AI-powered molecular analysis.
+  </p>
+</div>
+
+<!-- Upload -->
+<div class="w-full max-w-2xl bg-gray-900 rounded-xl p-8 border border-gray-700">
+
+  <h4 class="text-xl mb-4">Upload Protein (.pdb)</h4>
+
+  <label id="upload-box"
+    class="w-full flex items-center justify-center h-32 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-cyan-400">
+
+    Click to upload file
+    <input id="pdb-file-input" type="file" accept=".pdb">
+
+  </label>
+
+  <p id="file-name" class="mt-4 text-gray-300"></p>
+
+  <button id="discover-btn" disabled
+    class="w-full mt-6 h-12 bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">
+    Analyze Protein
+  </button>
+
+</div>
+
+</section>
+
+        <!-- Agent Flow Pipeline -->
+        <section id="pipeline-section" style="display:none;">
+
+<div class="ml-64 mt-16 p-10 min-h-screen relative bg-[#0f131e] overflow-y-auto">
+
+<!-- Header -->
+<div class="max-w-6xl mx-auto flex flex-col gap-2 mb-12">
+  <div class="flex items-center gap-4">
+    <div class="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
+    <h1 class="text-4xl font-bold">AI Pipeline Active</h1>
+  </div>
+  <p class="text-gray-400 text-lg">
+    Orchestrating autonomous agents for structural analysis...
+  </p>
+</div>
+
+<!-- Grid -->
+<div class="max-w-6xl mx-auto grid grid-cols-12 gap-6">
+
+<!-- LEFT PIPELINE -->
+<div class="col-span-12 lg:col-span-5 bg-gray-900 rounded-xl p-8">
+
+<h3 class="text-cyan-400 text-sm mb-6">PROCESSING STEPS</h3>
+
+<div class="space-y-6">
+
+<p>✔ Protein Parsing</p>
+<p>✔ Target Detection</p>
+
+<p class="text-cyan-400 animate-pulse">
+⏳ Binding Analysis...
+</p>
+
+<p class="opacity-50">Drug Screening</p>
+<p class="opacity-50">Risk Evaluation</p>
+
+</div>
+
+</div>
+
+<!-- RIGHT VISUAL -->
+<div class="col-span-12 lg:col-span-7 flex flex-col gap-6">
+
+<div class="bg-black rounded-xl p-10 flex items-center justify-center min-h-[300px]">
+
+<div class="relative w-40 h-40">
+
+<div class="absolute inset-0 border border-cyan-400 rounded-full animate-spin"></div>
+<div class="absolute inset-0 border border-purple-400 rounded-full animate-spin reverse"></div>
+
+<div class="flex items-center justify-center h-full text-5xl text-cyan-400">
+⚛
+</div>
+
+</div>
+
+</div>
+
+<div class="bg-gray-800 p-4 rounded-lg text-sm font-mono h-40 overflow-y-auto">
+
+<p>[INFO] Agent initialized...</p>
+<p>[INFO] Running simulation...</p>
+<p class="text-cyan-400 animate-pulse">[LIVE] Computing binding...</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+        <!-- Protein Info Card -->
+        <section class="protein-info-section" id="protein-info-section" style="display:none;">
+            <h3 class="section-title">Protein Structure</h3>
+            <div class="protein-info-card" id="protein-info-card"></div>
+            <div class="protein-viewer-panel" id="protein-viewer-panel" style="display:none;">
+                <div class="protein-viewer-header">
+                    <h4>Uploaded Protein (Target)</h4>
+                    <span id="protein-viewer-meta" class="protein-viewer-meta">Demo structure</span>
+                </div>
+                <div class="protein-viewer-canvas-wrap">
+                    <canvas id="protein-canvas"></canvas>
+                </div>
+            </div>
+            <div class="protein-viewer-panel molecule-viewer-panel" id="molecule-viewer-panel" style="display:none;">
+                <div class="protein-viewer-header">
+                    <h4>Top Candidate Molecule</h4>
+                    <span id="molecule-viewer-meta" class="protein-viewer-meta">No candidate</span>
+                </div>
+                <div id="molecule-viewer"></div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" style="display:none;" class="bg-background text-on-background min-h-screen">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-[#0f131e]/80 backdrop-blur-xl">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tighter text-[#c3f5ff] headline">Clinical Intel</span>
+<div class="hidden md:flex gap-6">
+<a class="text-[#bac9cc] hover:text-[#dfe2f2] transition-colors duration-200" href="#">Pipeline</a>
+<a class="text-[#00e5ff] border-b-2 border-[#00e5ff] pb-1 transition-colors duration-200" href="#">Research</a>
+<a class="text-[#bac9cc] hover:text-[#dfe2f2] transition-colors duration-200" href="#">Library</a>
+<a class="text-[#bac9cc] hover:text-[#dfe2f2] transition-colors duration-200" href="#">Reports</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-[#bac9cc] hover:bg-[#353945]/50 rounded-full transition-all duration-300">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-[#bac9cc] hover:bg-[#353945]/50 rounded-full transition-all duration-300">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30">
+<img alt="Researcher Profile" data-alt="close-up portrait of a professional female medical researcher in a modern laboratory setting, soft blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTaO2Li9fetY_qP4ScmurwPUEMg_g0ob6G37erM3IFOS9dTbICqM-B22LvHck6YOZ3upRnvAd4ET8wGkds25ZlkE1rMxfkCc1WC_AMI6aREkcb805v040MpW2kboq5krdvRah0kIkI40qRCGDxKr7Wmujccuyh1GEbScLlxNanyzWUOIkVzBO2QL9kUNQ-0dUOSv0yH2GZ7wj1yafNKCJ5xQzKMK2M13RGNNg_9F9TMHZ96V2I3fGc8DIvWmjNB5ghmUz5kpHkx8Pe"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-[#171b27] flex flex-col py-6 z-40 hidden md:flex">
+<div class="px-6 mb-10 mt-16">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">science</span>
+</div>
+<div>
+<h2 class="text-[#c3f5ff] font-bold headline text-sm">Molecular Prism</h2>
+<p class="text-on-surface-variant text-[10px] uppercase tracking-widest">v2.4-Synthetic</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a id="nav-dashboard" class="flex items-center gap-3 px-4 py-3 text-[#bac9cc] hover:bg-[#262a36] hover:text-[#dfe2f2] rounded-lg transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a id="nav-molecular" class="flex items-center gap-3 px-4 py-3 text-[#00e5ff] bg-[#262a36] font-semibold border-r-4 border-[#00e5ff] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="text-sm font-medium">Molecular View</span>
+</a>
+<a id="nav-agent-logs" class="flex items-center gap-3 px-4 py-3 text-[#bac9cc] hover:bg-[#262a36] hover:text-[#dfe2f2] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-sm font-medium">Agent Logs</span>
+</a>
+<a id="nav-history" class="flex items-center gap-3 px-4 py-3 text-[#bac9cc] hover:bg-[#262a36] hover:text-[#dfe2f2] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-sm font-medium">History</span>
+</a>
+</nav>
+<div class="px-6 mb-6">
+<button class="w-full py-3 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-md hover:scale-[0.98] transition-all duration-300 headline text-sm">
+                New Analysis
+            </button>
+</div>
+<div class="px-4 pt-6 border-t border-outline-variant/10 space-y-2">
+<a class="flex items-center gap-3 px-4 py-2 text-[#bac9cc] hover:text-[#dfe2f2] transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="text-xs">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-[#bac9cc] hover:text-[#dfe2f2] transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">description</span>
+<span class="text-xs">Documentation</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 pt-24 px-8 pb-12">
+<!-- Summary Header -->
+<header class="mb-10 flex justify-between items-end">
+<div class="max-w-2xl">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-0.5 bg-tertiary-container/10 text-tertiary text-[10px] font-bold tracking-widest uppercase rounded">Sequence Verified</span>
+<span class="text-on-surface-variant text-xs">•</span>
+<span class="text-on-surface-variant text-xs">Run ID: #4492-AX</span>
+</div>
+<h1 class="text-4xl md:text-5xl font-bold tracking-tight headline text-on-surface">Analysis Complete: <span class="text-primary-container">BRCA1-D22</span></h1>
+<p class="mt-4 text-on-surface-variant font-body leading-relaxed max-w-xl">
+                    Deep-fold simulation successfully identified 12 high-affinity ligands. Toxicity screening filtering is complete with a 98.4% confidence threshold.
+                </p>
+</div>
+<button id="new-analysis-btn" class="group flex items-center gap-2 px-6 py-3 border border-primary/20 text-primary rounded-md hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined group-hover:rotate-180 transition-transform duration-500">refresh</span>
+<span class="font-bold headline tracking-wide">New Analysis</span>
+</button>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- 3D Protein Visualization placeholder -->
+<div class="lg:col-span-8 h-[500px] relative rounded-xl overflow-hidden bg-surface-container-lowest border-t-2 border-secondary/20 shadow-2xl">
+<div class="absolute inset-0 bg-gradient-to-b from-surface-tint/5 to-transparent pointer-events-none"></div>
+<div class="absolute top-6 left-6 z-10 flex flex-col gap-2">
+<span class="text-[10px] font-bold text-primary-fixed tracking-[0.2em] uppercase">Interactive Render</span>
+<div class="flex gap-2">
+<button class="p-2 glass-panel rounded-lg text-primary hover:bg-primary/10 transition-colors"><span class="material-symbols-outlined">zoom_in</span></button>
+<button class="p-2 glass-panel rounded-lg text-primary hover:bg-primary/10 transition-colors"><span class="material-symbols-outlined">3d_rotation</span></button>
+<button class="p-2 glass-panel rounded-lg text-primary hover:bg-primary/10 transition-colors"><span class="material-symbols-outlined">layers</span></button>
+</div>
+</div>
+<div class="w-full h-full flex items-center justify-center">
+<div class="relative w-80 h-80">
+<div class="absolute inset-0 bg-surface-tint/20 blur-[100px] rounded-full animate-pulse"></div>
+<canvas id="results-protein-canvas" class="w-full h-full object-contain relative z-10 opacity-80"></canvas>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 glass-panel px-4 py-3 rounded-lg border border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">RMSD Value</p>
+<p class="text-xl font-bold headline text-primary">0.842 Å</p>
+</div>
+<div class="w-px h-8 bg-outline-variant/20"></div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Folding Score</p>
+<p class="text-xl font-bold headline text-secondary">92.1%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Chart.js Visualization Placeholder -->
+<div class="lg:col-span-4 h-[500px] bg-surface-container-low rounded-xl p-6 flex flex-col border border-outline-variant/5">
+<h3 class="text-lg font-bold headline mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">analytics</span>
+                    Binding vs. Toxicity
+                </h3>
+<div class="flex-1 relative flex items-center justify-center">
+<!-- Stylized Graph Simulation -->
+<div class="w-full h-full flex flex-col justify-between">
+<div class="flex-1 flex items-end gap-1 px-2 border-l border-b border-outline-variant/30 relative">
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,229,255,0.05),transparent)]"></div>
+<!-- Simulated Data Points -->
+<div class="absolute w-3 h-3 bg-primary rounded-full blur-[2px]" style="left: 20%; bottom: 40%"></div>
+<div class="absolute w-4 h-4 bg-secondary rounded-full blur-[3px]" style="left: 45%; bottom: 65%"></div>
+<div class="absolute w-2 h-2 bg-tertiary rounded-full shadow-[0_0_10px_#71f8e4]" style="left: 70%; bottom: 85%"></div>
+<div class="absolute w-3 h-3 bg-error rounded-full blur-[2px]" style="left: 85%; bottom: 15%"></div>
+<svg class="w-full h-full opacity-30" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0 80 Q 25 70, 50 40 T 100 10" fill="none" stroke="url(#gradient)" stroke-width="2"></path>
+<defs>
+<lineargradient id="gradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#00e5ff"></stop>
+<stop offset="100%" stop-color="#cdbdff"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+<div class="flex justify-between mt-2 px-2 text-[10px] text-on-surface-variant font-medium">
+<span>LOW TOXICITY</span>
+<span>HIGH TOXICITY</span>
+</div>
+</div>
+</div>
+<div class="mt-6 space-y-3">
+<div class="flex justify-between items-center p-3 rounded bg-surface-container-high/50">
+<span class="text-xs text-on-surface-variant">Frontier Candidates</span>
+<span class="text-sm font-bold text-on-surface">04</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded bg-surface-container-high/50">
+<span class="text-xs text-on-surface-variant">Toxicity Threshold</span>
+<span class="text-sm font-bold text-error">&lt; 0.12 μM</span>
+</div>
+</div>
+</div>
+<!-- Grid of Drug Cards -->
+<div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+<!-- Drug Card 1 -->
+<div class="bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container-high transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pill</span>
+</div>
+<div class="bg-tertiary-container/10 text-tertiary text-[10px] font-bold px-2 py-0.5 rounded">PASSED</div>
+</div>
+<h4 class="text-lg font-bold headline text-on-surface mb-1">CXR-772</h4>
+<p class="text-xs text-on-surface-variant mb-4">Synthetic Peptide Inhibitor</p>
+<div class="space-y-3">
+<div class="flex justify-between items-end">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Confidence</span>
+<span class="text-sm font-bold text-on-surface">98.2%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-primary w-[98%]"></div>
+</div>
+</div>
+</div>
+<!-- Drug Card 2 -->
+<div class="bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container-high transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pill</span>
+</div>
+<div class="bg-tertiary-container/10 text-tertiary text-[10px] font-bold px-2 py-0.5 rounded">PASSED</div>
+</div>
+<h4 class="text-lg font-bold headline text-on-surface mb-1">LGN-019</h4>
+<p class="text-xs text-on-surface-variant mb-4">Small Molecule Macrocycle</p>
+<div class="space-y-3">
+<div class="flex justify-between items-end">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Confidence</span>
+<span class="text-sm font-bold text-on-surface">94.7%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-primary w-[94%]"></div>
+</div>
+</div>
+</div>
+<!-- Drug Card 3 -->
+<div class="bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container-high transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pill</span>
+</div>
+<div class="bg-tertiary-container/10 text-tertiary text-[10px] font-bold px-2 py-0.5 rounded">PASSED</div>
+</div>
+<h4 class="text-lg font-bold headline text-on-surface mb-1">TKV-443</h4>
+<p class="text-xs text-on-surface-variant mb-4">Antibody-Drug Conjugate</p>
+<div class="space-y-3">
+<div class="flex justify-between items-end">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Confidence</span>
+<span class="text-sm font-bold text-on-surface">82.1%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-secondary to-primary w-[82%]"></div>
+</div>
+</div>
+</div>
+<!-- Drug Card 4 -->
+<div class="bg-surface-container-low p-5 rounded-xl group hover:bg-surface-container-high transition-all duration-300 cursor-pointer border border-transparent hover:border-primary/10">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pill</span>
+</div>
+<div class="bg-error-container/20 text-error text-[10px] font-bold px-2 py-0.5 rounded">FAILED</div>
+</div>
+<h4 class="text-lg font-bold headline text-on-surface mb-1">BNM-229</h4>
+<p class="text-xs text-on-surface-variant mb-4">Fragment-Based Ligand</p>
+<div class="space-y-3">
+<div class="flex justify-between items-end">
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Confidence</span>
+<span class="text-sm font-bold text-error">42.8%</span>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error/40 w-[42%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#171b27] h-16 flex justify-around items-center z-50 shadow-2xl">
+<button id="bottom-dashboard" class="flex flex-col items-center gap-1 text-[#00e5ff]">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px]">Dashboard</span>
+</button>
+<button id="bottom-research" class="flex flex-col items-center gap-1 text-[#bac9cc]">
+<span class="material-symbols-outlined">science</span>
+<span class="text-[10px]">Research</span>
+</button>
+<button id="bottom-logs" class="flex flex-col items-center gap-1 text-[#bac9cc]">
+<span class="material-symbols-outlined">terminal</span>
+<span class="text-[10px]">Logs</span>
+</button>
+<button id="bottom-history" class="flex flex-col items-center gap-1 text-[#bac9cc]">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px]">History</span>
+</button>
+</nav>
+</section>
+    </main>
+
+    <!-- Modal for MCP Tools -->
+    <div class="modal-overlay" id="modal-overlay" style="display:none;">
+        <div class="modal" id="modal">
+            <div class="modal-header">
+                <h3 id="modal-title"></h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="/static/api/api.js"></script>
+    <script src="/static/components/InputBox.js"></script>
+    <script src="/static/components/AgentFlow.js"></script>
+    <script src="/static/components/ResultCard.js"></script>
+    <script src="/static/app.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script type="module" src="/static/animations/background3d.js"></script>
+    <script type="module">
+        import { initParticles } from "/static/js/particles.js";
+        import { initDnaCanvas } from "/static/js/dna-canvas.js";
+        initParticles(document.getElementById("particles"));
+        const dnaCanvas = document.getElementById("dna-canvas-bg");
+        if (dnaCanvas) initDnaCanvas(dnaCanvas);
+    </script>
+</body>
+
+</html>
